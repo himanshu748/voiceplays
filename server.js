@@ -15,6 +15,16 @@ const JOB_TIMEOUT_MS = Number(process.env.JOB_TIMEOUT_MS ?? 15 * 60 * 1000);
 const MAX_RUNNING = Number(process.env.MAX_RUNNING ?? 3);
 const CONFIRM_TTL_MS = 2 * 60 * 1000;
 
+// A typo here would otherwise become NaN: setTimeout(fn, NaN) fires at once, so
+// every play would be "timed out" instantly, and `n >= NaN` is never true, so
+// the concurrency cap would silently disappear.
+for (const [key, value] of [['PORT', PORT], ['JOB_TIMEOUT_MS', JOB_TIMEOUT_MS], ['MAX_RUNNING', MAX_RUNNING]]) {
+  if (!Number.isInteger(value) || value < 1) {
+    console.error(`${key} must be a positive integer, got "${process.env[key]}".`);
+    process.exit(1);
+  }
+}
+
 const auth = configureAuth(process.env);
 if (auth.problems) {
   for (const p of auth.problems) console.error(p);

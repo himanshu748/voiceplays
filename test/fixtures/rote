@@ -1,0 +1,20 @@
+#!/bin/sh
+# Stand-in for the rote CLI so tests run without a real rote install.
+if [ "$1 $2" = "play list" ]; then
+  cat <<'JSON'
+[
+  {"name":"disk-space","description":"Report free disk space","tags":["effect-read-only","system"],"source":"local"},
+  {"name":"disk-space","description":"Report free disk space","tags":["effect-read-only","system"],"source":"hub"},
+  {"name":"restart-nginx","description":"Restart the web server","tags":["ops"],"source":"local"},
+  {"name":"deploy","description":"Deploy a service","tags":["effect-read-only"],"source":"local","parameters":[{"name":"service","required":true}]},
+  {"name":"weather","description":"Fetch weather","tags":["effect-read-only"],"source":"hub"}
+]
+JSON
+  exit 0
+fi
+if [ "$1 $2" = "play run" ]; then
+  printf '\033[32m\342\224\200\342\224\200 step 1\033[0m\n'
+  echo "Filesystem /dev/sda1 has 42 GB free"
+  exit 0
+fi
+exit 2

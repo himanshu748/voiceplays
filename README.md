@@ -1,13 +1,22 @@
 # voiceplays
 
+[![CI](https://github.com/himanshu748/voiceplays/actions/workflows/ci.yml/badge.svg)](https://github.com/himanshu748/voiceplays/actions/workflows/ci.yml)
+
 An Alexa+ MCP add-on that runs your saved rote procedures by voice. Ask for something in your own words, it finds the matching procedure, starts it in the background and tells you how it went when you ask. Procedures that need arguments are refused by name. Procedures not tagged read-only are off unless you enable them, and even then need a confirmation code on a second turn. It is a self-hosted MCP server on Streamable HTTP, protocol version 2025-11-25, with OAuth 2.0 client_credentials for Alexa+.
+
+<!-- TODO(himanshu): add a short demo GIF or clip here (ask for a play by voice -> start -> ask for the result) -->
+
+```
+you ──voice──▶ Alexa+ ──MCP (Streamable HTTP, OAuth)──▶ voiceplays ──spawn──▶ rote play run <name>
+                                  ◀── short spoken summary ── background job ◀──┘
+```
 
 ## Run it
 
-Needs Node 22+ and rote with at least one saved play (`rote play list`).
+Needs Node 22.9+ (for `--env-file-if-exists`) and rote with at least one saved play (`rote play list`).
 
 ```bash
-npm install
+npm ci
 export VOICEPLAYS_TOKEN=$(openssl rand -hex 32)
 npm start
 ```
@@ -19,6 +28,26 @@ curl -s -X POST http://127.0.0.1:8787/mcp -H "Authorization: Bearer $VOICEPLAYS_
 ```
 
 Copy `.env.example` to `.env` to keep settings; `npm start` loads it.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `VOICEPLAYS_TOKEN` | none | Static bearer token for local clients, 32+ chars |
+| `VOICEPLAYS_CLIENT_ID`, `VOICEPLAYS_CLIENT_SECRET`, `PUBLIC_URL` | none | OAuth client_credentials for Alexa+; set all three |
+| `VOICEPLAYS_ALLOW_WRITES` | empty | Comma-separated non-read-only plays allowed by voice (still need a confirmation code) |
+| `VOICEPLAYS_APPROVED_REGISTRY` | empty | Registry plays you reviewed; only these get `--yes` |
+| `HOST` / `PORT` | `127.0.0.1` / `8787` | Bind address |
+| `JOB_TIMEOUT_MS` | `900000` | A run past this is stopped with its whole process group |
+| `MAX_RUNNING` | `3` | Concurrent plays |
+
+At least one auth option is required, and the numeric settings must be positive integers; the server refuses to start otherwise.
+
+## Test
+
+```bash
+npm test
+```
+
+Unit tests for speech cleanup and ranking, plus end-to-end MCP calls against a fake `rote` in `test/fixtures/`, so no real rote install or Alexa account is needed. CI runs them on every push and pull request.
 
 ## Tools
 

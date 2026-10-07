@@ -9,6 +9,11 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 const SCOPE = 'mcp:service';
 const TOKEN_TTL_S = 3600;
 
+// A malformed %-escape in Basic credentials must be a 401, not a thrown URIError (500).
+function decode(value) {
+  try { return decodeURIComponent(value); } catch { return null; }
+}
+
 function same(a, b) {
   const x = Buffer.from(a);
   const y = Buffer.from(b);
@@ -71,7 +76,9 @@ export function configureAuth(env) {
       const [id, secret] = basic.startsWith('Basic ')
         ? Buffer.from(basic.slice(6), 'base64').toString().split(/:(.*)/s)
         : [];
-      if (!id || !secret || !same(decodeURIComponent(id), clientId) || !same(decodeURIComponent(secret), clientSecret)) {
+      const givenId = id && decode(id);
+      const givenSecret = secret && decode(secret);
+      if (!givenId || !givenSecret || !same(givenId, clientId) || !same(givenSecret, clientSecret)) {
         res.set('WWW-Authenticate', 'Basic');
         return fail(401, 'invalid_client');
       }
